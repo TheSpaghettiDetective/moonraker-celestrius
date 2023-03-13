@@ -13,6 +13,9 @@ def configure(config_path):
     if os.path.exists(config_path):
         config.read(config_path)
 
+    if "moonraker" not in config:
+        config.add_section("moonraker")
+
     print(CYAN + "Configuring the server info for your Moonraker server.\n" + NC)
     mr_host = config.get("moonraker", "host", fallback="127.0.0.1")
     mr_host = input(f"Moonraker IP address or hostname (current: {mr_host}): ") or mr_host
@@ -21,6 +24,9 @@ def configure(config_path):
     mr_port = config.get("moonraker", "host", fallback="7125")
     mr_port = input(f"Moonraker port (current: {mr_port}): ") or mr_port
     config.set("moonraker", "port", mr_port)
+
+    if "nozzle_camera" not in config:
+        config.add_section("nozzle_camera")
 
     print(CYAN + """
 Configuring the Snapshot URL for the nozzle camera you set up for project Celestrius.
@@ -31,6 +37,9 @@ you configured for your printer. Be sure to enter the URL for the correct camera
     snapshot_url = config.get("nozzle_camera", "snapshot_url", fallback="")
     snapshot_url = input(f"Nozzle camera snapshot URL (current: {snapshot_url}): ") or snapshot_url
     config.set("nozzle_camera", "snapshot_url", snapshot_url)
+
+    if "celestrius" not in config:
+        config.add_section("celestrius")
 
     print(CYAN + """
 Configuring the email you signed up for the Celestrius limited pilot with.
