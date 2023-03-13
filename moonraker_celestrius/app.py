@@ -16,7 +16,11 @@ import psutil
 import shutil
 import pathlib
 from configparser import ConfigParser
-import datetime
+from datetime import datetime
+import requests
+import os
+import subprocess
+from google.cloud import storage
 from .logger import setup_logging
 from .moonraker_conn import MoonrakerConn, Event
 
@@ -49,6 +53,7 @@ class App(object):
         data_dirname = None
         snapshot_num_in_current_print = 0
 
+        import pdb; pdb.set_trace()
         while True:
             try:
                 if self.printer_stats:
@@ -57,7 +62,7 @@ class App(object):
                             continue
 
                         if data_dirname == None:
-                            filename = self.printer_stats.get('filename')
+                            filename = os.path.basename(self.printer_stats.get('filename'))
                             if not filename:
                                 continue
 
@@ -130,7 +135,7 @@ class App(object):
         bucket = client.bucket('celestrius-data-collection')
         basename = os.path.basename((filename))
         with open(filename, 'rb') as f:
-            blob = bucket.blob(f'{self._settings.get(["pilot_email"])}/{basename}')
+            blob = bucket.blob(f"{self.config.get('celestrius', 'pilot_email')}/{basename}")
             blob.upload_from_file(f, timeout=None)
 
     def should_collect(self):
@@ -146,6 +151,15 @@ class App(object):
     def on_moonraker_ws_closed(self):
         with self._mutex:
             self.printer_stats = None
+
+    def capture_jpeg(self):
+        snapshot_url = self.config.get('nozzle_camera', 'snapshot_url')
+        if snapshot_url:
+            r = requests.get(snapshot_url, stream=True, timeout=5, verify=False )
+            r.raise_for_status()
+            jpg = r.content
+            return jpg
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
