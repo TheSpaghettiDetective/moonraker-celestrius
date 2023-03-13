@@ -21,7 +21,7 @@ def configure(config_path):
     mr_host = input(f"Moonraker IP address or hostname (current: {mr_host}): ") or mr_host
     config.set("moonraker", "host", mr_host)
 
-    mr_port = config.get("moonraker", "host", fallback="7125")
+    mr_port = config.get("moonraker", "port", fallback="7125")
     mr_port = input(f"Moonraker port (current: {mr_port}): ") or mr_port
     config.set("moonraker", "port", mr_port)
 
@@ -48,7 +48,7 @@ uploaded to the server.
     """ + NC)
 
     pilot_email = config.get("celestrius", "pilot_email", fallback="")
-    pilot_email = input(f"Nozzle camera snapshot URL (current: {pilot_email}): ") or pilot_email
+    pilot_email = input(f"The email you signed up for the pilot program with (current: {pilot_email}): ") or pilot_email
     config.set("celestrius", "pilot_email", pilot_email)
 
     # Save the updated configuration to the config file
