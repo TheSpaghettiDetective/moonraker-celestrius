@@ -24,8 +24,9 @@ class MoonrakerConn:
     flow_step_timeout_msecs = 2000
     ready_timeout_msecs = 60000
 
-    def __init__(self, config, on_message):
+    def __init__(self, config, on_message, on_close):
         self.on_message = on_message
+        self.on_close = on_close
         self.config = config
         self.klippy_ready = threading.Event()  # Based on https://moonraker.readthedocs.io/en/latest/web_api/#websocket-setup
         self.ws_message_queue_to_moonraker = queue.Queue(maxsize=16)
@@ -119,7 +120,7 @@ class MoonrakerConn:
             except Exception as e:
                 _logger.exception(e)
 
-            time.sleep(100000)
+            time.sleep(30)
 
     def message_to_moonraker_loop(self):
 
@@ -134,9 +135,7 @@ class MoonrakerConn:
 
         def on_mr_ws_close(ws, **kwargs):
             self.klippy_ready.clear()
-            self.push_event(
-                Event(sender=self.id, name='mr_disconnected', data={})
-            )
+            self.on_close()
             self.request_status_update()  # Trigger a re-connection to Moonraker
 
         def on_message(ws, raw):
@@ -145,6 +144,11 @@ class MoonrakerConn:
 
             data = json.loads(raw)
             _logger.debug(f'Received from Moonraker: {data}')
+
+            'notify_status_update',
+            if data.get('method') == 'notify_status_update':
+                self.request_status_update()
+                return
 
             self.on_message(data)
 
@@ -180,7 +184,7 @@ class MoonrakerConn:
         if not self.conn:
             self.conn.close()
 
-    def jsonrpc_request(self, method, params=None, callback=None):
+    def jsonrpc_request(self, method, params=None):
         next_id = randrange(100000)
         payload = {
             "jsonrpc": "2.0",
@@ -206,20 +210,13 @@ class MoonrakerConn:
         return self.jsonrpc_request('printer.objects.subscribe', params=dict(objects=objects))
 
     def request_status_update(self, objects=None):
-        def status_update_callback(data):
-            self.push_event(
-                Event(sender=self.id, name='status_update', data=data)
-            )
-
-        self.moonraker_state_requested_ts = time.time()
-
         if objects is None:
             objects = {
                 "webhooks": None,
                 "print_stats": None,
             }
 
-        self.jsonrpc_request('printer.objects.query', params=dict(objects=objects), callback=status_update_callback)
+        self.jsonrpc_request('printer.objects.query', params=dict(objects=objects))
 
 @dataclasses.dataclass
 class Event:
