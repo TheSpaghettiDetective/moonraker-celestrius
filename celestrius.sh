@@ -51,13 +51,13 @@ EOF
 config_incomplete() {
       cat <<EOF
 ${red}
-Configruation interrupted! No data will be sent until the Celestrius data collection program is configured properly.
+Invalid input! Configuration failed to complete. No data will be sent until the Celestrius data collection program is configured properly.
 ${default}
 
 To rerun the configuration process at a later time, run:
 
 -------------------------------------------------------------------------------------------------
-cd moonraker-celestrius
+cd ~/moonraker-celestrius
 ./celestrius.sh install
 -------------------------------------------------------------------------------------------------
 
@@ -65,13 +65,13 @@ EOF
 }
 
 configure() {
+  welcome
+  ensure_deps
+
   if ! PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}"; then
     config_incomplete
   fi
 }
-
-welcome
-ensure_deps
 
 case $1 in
    help) usage && exit 0;;
