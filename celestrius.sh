@@ -3,6 +3,7 @@
 set -e
 
 CEL_DIR=$(realpath $(dirname "$0"))
+CEL_CFG_FILE="${CEL_DIR}/moonraker-celestrius.cfg"
 
 green=$(echo -en "\e[92m")
 yellow=$(echo -en "\e[93m")
@@ -47,8 +48,26 @@ Usage: $0 install   # Install/Re-install and configure/re-configure the Celestri
 EOF
 }
 
-install() {
-echo 'asdf'
+config_incomplete() {
+      cat <<EOF
+${red}
+Configruation interrupted! No data will be sent until the Celestrius data collection program is configured properly.
+${default}
+
+To rerun the configuration process at a later time, run:
+
+-------------------------------------------------------------------------------------------------
+cd moonraker-celestrius
+./celestrius.sh install
+-------------------------------------------------------------------------------------------------
+
+EOF
+}
+
+configure() {
+  if ! PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}"; then
+    config_incomplete
+  fi
 }
 
 welcome
@@ -56,6 +75,6 @@ ensure_deps
 
 case $1 in
    help) usage && exit 0;;
-   install) install;;
+   install) configure;;
     *) usage && exit 1;;
 esac
