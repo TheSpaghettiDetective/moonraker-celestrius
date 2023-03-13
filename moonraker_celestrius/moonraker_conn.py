@@ -205,7 +205,7 @@ class MoonrakerConn:
         objects = objects if objects else {
             'print_stats': ('state', 'message', 'filename'),
             'webhooks': ('state', 'state_message'),
-            'history': None,
+            'gcode_move': None,
         }
         return self.jsonrpc_request('printer.objects.subscribe', params=dict(objects=objects))
 
@@ -214,6 +214,7 @@ class MoonrakerConn:
             objects = {
                 "webhooks": None,
                 "print_stats": None,
+                'gcode_move': None,
             }
 
         self.jsonrpc_request('printer.objects.query', params=dict(objects=objects))

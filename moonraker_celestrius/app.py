@@ -15,6 +15,7 @@ import backoff
 import psutil
 import shutil
 import pathlib
+import copy
 from configparser import ConfigParser
 from datetime import datetime
 import requests
@@ -53,21 +54,23 @@ class App(object):
         data_dirname = None
         snapshot_num_in_current_print = 0
 
-        import pdb; pdb.set_trace()
         while True:
             try:
                 if self.printer_stats:
-                    if self.printer_stats.get('state') in ['printing',] and self.printer_stats.get('filename'):
+                    with self._mutex:
+                        printer_stats = copy.deepcopy(self.printer_stats)
+
+                    if printer_stats.get('state') in ['printing',] and printer_stats.get('filename'):
                         if not self.should_collect() or snapshot_num_in_current_print > MAX_SNAPSHOT_NUM_IN_PRINT:
                             continue
 
                         if data_dirname == None:
-                            filename = os.path.basename(self.printer_stats.get('filename'))
+                            filename = os.path.basename(printer_stats.get('filename'))
                             if not filename:
                                 continue
 
                             print_id = str(int(datetime.now().timestamp()))
-                            data_dirname = os.path.join(os.path.expanduser('~'), f'{filename}.{print_id}')
+                            data_dirname = os.path.join(os.path.expanduser('~'), 'celestrius-data',f'{filename}.{print_id}')
                             os.makedirs(data_dirname, exist_ok=True)
 
                         ts = datetime.now().timestamp()
@@ -80,14 +83,15 @@ class App(object):
                                 f.write(jpg)
                             with open(f'{data_dirname}/{ts}.labels', 'w') as f:
                                 with self._mutex:
-                                    f.write(f'flow_rate:{self.current_flow_rate}')
+                                    f.write(f'flow_rate:{self.current_flow_rate}\n')
+                                    f.write(f'z_offset:{self.current_z_offset}\n')
 
-                    elif self.printer_stats.get('state') in ['paused',]:
+                    elif printer_stats.get('state') in ['paused',]:
                         pass
                     else:
                         if data_dirname is not None:
                             data_dirname_to_compress = data_dirname
-                            compress_thread = Thread(target=self.compress_and_upload, args=(data_dirname_to_compress,))
+                            compress_thread = threading.Thread(target=self.compress_and_upload, args=(data_dirname_to_compress,))
                             compress_thread.daemon = True
                             compress_thread.start()
 
@@ -119,7 +123,7 @@ class App(object):
             self.upload_to_data_bucket(tarball_filename)
             _logger.info('Deleting ' + tarball_filename)
             os.remove(tarball_filename)
-            uploaded_list_file = os.path.join(os.path.expanduser('~'), 'uploaded_print_list.csv')
+            uploaded_list_file = os.path.join(os.path.expanduser('~'), 'celestrius-data','uploaded_print_list.csv')
             with open(uploaded_list_file, 'a') as file:
                 now = datetime.now().strftime('%A, %B %d, %Y')
                 line = f'"{os.path.basename(data_dirname)}","{now}"\n'
@@ -146,6 +150,12 @@ class App(object):
         if print_stats:
             with self._mutex:
                 self.printer_stats = print_stats
+
+        gcode_move = msg.get('result', {}).get('status').get('gcode_move')
+        if gcode_move:
+            with self._mutex:
+                self.current_flow_rate = gcode_move.get('extrude_factor')
+                self.current_z_offset = gcode_move.get('homing_origin', [None, None, None, None])[2]
 
 
     def on_moonraker_ws_closed(self):
