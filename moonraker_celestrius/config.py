@@ -3,6 +3,7 @@ import os
 import argparse
 import signal
 import sys
+import requests
 
 CYAN='\033[0;96m'
 RED='\033[0;31m'
@@ -24,14 +25,14 @@ def configure(config_path):
 
     print(CYAN + "Configuring the server info for your Moonraker server.\n" + NC)
     mr_host = config.get("moonraker", "host", fallback="127.0.0.1")
-    mr_host = input(f"Moonraker IP address or hostname (current: {mr_host}): ") or mr_host
+    mr_host = input(f"Moonraker IP address or hostname (press 'enter' to accept current: {mr_host}): ") or mr_host
     mr_host = mr_host.strip()
     if not mr_host:
         config_interrupted(None, None)
     config.set("moonraker", "host", mr_host)
 
     mr_port = config.get("moonraker", "port", fallback="7125")
-    mr_port = input(f"Moonraker port (current: {mr_port}): ") or mr_port
+    mr_port = input(f"Moonraker port (press 'enter' to accept current: {mr_port}): ") or mr_port
     mr_port = mr_port.strip()
     if not mr_port:
         config_interrupted(None, None)
@@ -46,9 +47,27 @@ Please note if you have multiple cameras set up, this may NOT be the main camera
 you configured for your printer. Be sure to enter the URL for the correct camera.
     """ + NC)
 
-    snapshot_url = config.get("nozzle_camera", "snapshot_url", fallback="")
-    snapshot_url = input(f"Nozzle camera snapshot URL (current: {snapshot_url}): ") or snapshot_url
-    snapshot_url = snapshot_url.strip()
+    snapshot_url_validated = False
+    while not snapshot_url_validated:
+        try:
+            snapshot_url = config.get("nozzle_camera", "snapshot_url", fallback="")
+            snapshot_url = input(f"Nozzle camera snapshot URL (press 'enter' to accept current: {snapshot_url}): ") or snapshot_url
+            snapshot_url = snapshot_url.strip()
+
+            response = requests.get(snapshot_url)
+
+            if response.status_code == 200 and len(response.content) > 10000:
+                snapshot_url_validated = True
+        except:
+            pass
+
+        if not snapshot_url_validated:
+
+            print(RED + """
+Testing the snapshot URL... failed!
+Please provide the URL in the correct format. For instance: http://127.0.0.1/webcam/?action=snapshot
+    """ + NC)
+
     if not snapshot_url:
         config_interrupted(None, None)
 
@@ -64,7 +83,7 @@ uploaded to the server.
     """ + NC)
 
     pilot_email = config.get("celestrius", "pilot_email", fallback="")
-    pilot_email = input(f"The email you signed up for the pilot program with (current: {pilot_email}): ") or pilot_email
+    pilot_email = input(f"The email you signed up for the pilot program with (press 'enter' to accept current: {pilot_email}): ") or pilot_email
     pilot_email = pilot_email.strip()
     if not pilot_email:
         config_interrupted(None, None)
