@@ -41,15 +41,26 @@ ${cyan}
 ###                                                                                              ###
 ====================================================================================================
 ${default}
+${yellow}
+NOTE: The data collection is disabled so that you won't accidentally upload unintended data. To enable:
+
+./celestrius.sh enable
+
+Run "./celestrius.sh disable" to disable the data collection again.
+${default}
+
+
+====================================================================================================
+
 The changes we have made to your system:
 
 - System service: /etc/systemd/system/${CEL_SERVICE_NAME}
 - Log file: ${CEL_LOG_FILE}
 
-To remove Obico for Klipper, run:
+To remove Celestrius, run
 
-cd ~/moonraker-obico
-./install.sh -u
+cd ~/moonraker-celestrius
+./celestrius.sh uninstall
 
 EOF
 
@@ -93,7 +104,6 @@ EOF
 }
 
 recreate_service() {
-  echo ""
   report_status "Creating moonraker-celestrius systemctl service... You may need to enter password to run sudo."
 
   sudo systemctl stop "${CEL_SERVICE_NAME}" 2>/dev/null || true
