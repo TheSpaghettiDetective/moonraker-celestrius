@@ -68,6 +68,12 @@ configure() {
   welcome
   ensure_deps
 
+  "${CEL_DIR}/moonraker_celestrius/scripts/terms.sh"
+  read -p "Do you understand and accept the terms and the privacy policy [Y/n]: " -e -i "Y" accepted
+  if [ "${accepted^^}" != "Y" ] ; then
+    config_incomplete
+  fi
+
   if ! PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}" $@; then
     config_incomplete
   fi
