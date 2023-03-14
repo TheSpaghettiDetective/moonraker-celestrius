@@ -30,6 +30,14 @@ cd ~/moonraker-celestrius
 ./celestrius.sh install
 ```
 
+## Update to the latest version
+
+```
+cd ~/moonraker-celestrius
+git pull
+sudo systemctl restart moonraker-celestrius
+```
+
 ## Display uninstall instructions
 
 ```
