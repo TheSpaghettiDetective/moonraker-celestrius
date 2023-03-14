@@ -94,7 +94,7 @@ uploaded to the server.
         config.add_section("logging")
     log_path = os.path.join(os.path.dirname(config_path), 'logs', 'moonraker-celestrius.log')
     config.set("logging", "path", log_path)
-    config.set("logging", "level", "INFO")
+    config.set("logging", "level", config.get("logging", "level", fallback="INFO"))
 
     # Save the updated configuration to the config file
     with open(config_path, "w") as f:

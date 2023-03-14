@@ -53,6 +53,7 @@ class App(object):
         last_collect = 0.0
         data_dirname = None
         snapshot_num_in_current_print = 0
+        temperature_reached = False
 
         while True:
             try:
@@ -95,8 +96,7 @@ class App(object):
                             compress_thread.daemon = True
                             compress_thread.start()
 
-                        self.have_seen_m109 = False
-                        self.have_seen_gcode_after_m109 = False
+                        self.temperature_reached = False
                         snapshot_num_in_current_print = 0
                         data_dirname = None
 
@@ -143,7 +143,10 @@ class App(object):
             blob.upload_from_file(f, timeout=None)
 
     def should_collect(self):
-        return self.config.get('celestrius', 'pilot_email') is not None and self.config.get('celestrius', 'enabled', fallback="False").lower() == "true"
+        with self._mutex:
+            return self.config.get('celestrius', 'pilot_email') is not None and \
+                self.config.get('celestrius', 'enabled', fallback="False").lower() == "true" and \
+                    self.temperature_reached
 
     def on_moonraker_ws_msg(self, msg):
         print_stats = msg.get('result', {}).get('status', {}).get('print_stats')
@@ -157,6 +160,10 @@ class App(object):
                 self.current_flow_rate = gcode_move.get('extrude_factor')
                 self.current_z_offset = gcode_move.get('homing_origin', [None, None, None, None])[2]
 
+        extruder = msg.get('result', {}).get('status').get('extruder')
+        if extruder and extruder.get('temperature', 0) > extruder.get('target', 200) - 2:
+            with self._mutex:
+                self.temperature_reached = True
 
     def on_moonraker_ws_closed(self):
         with self._mutex:

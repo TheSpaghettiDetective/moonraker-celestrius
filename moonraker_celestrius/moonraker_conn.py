@@ -215,6 +215,7 @@ class MoonrakerConn:
                 "webhooks": None,
                 "print_stats": None,
                 'gcode_move': None,
+                'extruder': None,
             }
 
         self.jsonrpc_request('printer.objects.query', params=dict(objects=objects))
