@@ -9,7 +9,7 @@ CYAN='\033[0;96m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-def config_interrupted(signum, frame):
+def config_interrupted():
     print('')
     sys.exit(1)
 
@@ -25,14 +25,14 @@ def configure(config_path):
 
     print(CYAN + "Configuring the server info for your Moonraker server.\n" + NC)
     mr_host = config.get("moonraker", "host", fallback="127.0.0.1")
-    mr_host = input(f"Moonraker IP address or hostname (press 'enter' to accept current: {mr_host}): ") or mr_host
+    mr_host = input(f"Moonraker IP address or hostname (press 'enter' to accept: {mr_host}): ") or mr_host
     mr_host = mr_host.strip()
     if not mr_host:
         config_interrupted(None, None)
     config.set("moonraker", "host", mr_host)
 
     mr_port = config.get("moonraker", "port", fallback="7125")
-    mr_port = input(f"Moonraker port (press 'enter' to accept current: {mr_port}): ") or mr_port
+    mr_port = input(f"Moonraker port (press 'enter' to accept: {mr_port}): ") or mr_port
     mr_port = mr_port.strip()
     if not mr_port:
         config_interrupted(None, None)
@@ -51,7 +51,8 @@ you configured for your printer. Be sure to enter the URL for the correct camera
     while not snapshot_url_validated:
         try:
             snapshot_url = config.get("nozzle_camera", "snapshot_url", fallback="")
-            snapshot_url = input(f"Nozzle camera snapshot URL (press 'enter' to accept current: {snapshot_url}): ") or snapshot_url
+            current_val = f" (press 'enter' to accept: {snapshot_url})" if snapshot_url else ""
+            snapshot_url = input(f"Nozzle camera snapshot URL{current_val}: ") or snapshot_url
             snapshot_url = snapshot_url.strip()
 
             response = requests.get(snapshot_url)
@@ -83,7 +84,7 @@ uploaded to the server.
     """ + NC)
 
     pilot_email = config.get("celestrius", "pilot_email", fallback="")
-    pilot_email = input(f"The email you signed up for the pilot program with (press 'enter' to accept current: {pilot_email}): ") or pilot_email
+    pilot_email = input(f"The email you signed up for the pilot program with (press 'enter' to accept: {pilot_email}): ") or pilot_email
     pilot_email = pilot_email.strip()
     if not pilot_email:
         config_interrupted(None, None)
@@ -120,9 +121,6 @@ def enable(config_path, enabled):
         config_interrupted(None, None)
 
 if __name__ == '__main__':
-
-    signal.signal(signal.SIGINT, config_interrupted)
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c', '--config', required=True,
