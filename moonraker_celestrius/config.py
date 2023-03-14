@@ -9,7 +9,7 @@ CYAN='\033[0;96m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-def config_interrupted():
+def config_interrupted(signum, frame):
     print('')
     sys.exit(1)
 
@@ -59,7 +59,9 @@ you configured for your printer. Be sure to enter the URL for the correct camera
 
             if response.status_code == 200 and len(response.content) > 10000:
                 snapshot_url_validated = True
-        except:
+        except KeyboardInterrupt:
+            config_interrupted(None, None)
+        except Exception as e:
             pass
 
         if not snapshot_url_validated:
@@ -121,6 +123,9 @@ def enable(config_path, enabled):
         config_interrupted(None, None)
 
 if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT, config_interrupted)
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c', '--config', required=True,
