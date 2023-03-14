@@ -75,6 +75,25 @@ uploaded to the server.
     with open(config_path, "w") as f:
         config.write(f)
 
+
+def enable(config_path, enabled):
+    config = configparser.ConfigParser()
+    if os.path.exists(config_path):
+        config.read(config_path)
+
+    if config.get("moonraker", "host", fallback="") and \
+       config.get("moonraker", "port", fallback="") and \
+       config.get("nozzle_camera", "snapshot_url", fallback="") and \
+       config.get("celestrius", "pilot_email", fallback=""):
+
+        config.set("celestrius", "enabled", str(enabled))
+        # Save the updated configuration to the config file
+        with open(config_path, "w") as f:
+            config.write(f)
+
+    else:
+        config_interrupted(None, None)
+
 if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, config_interrupted)
@@ -84,5 +103,13 @@ if __name__ == '__main__':
         '-c', '--config', required=True,
         help='Path to config file (cfg)'
     )
+    parser.add_argument('-e', '--enable', help='Enable data collection', action='store_true')
+    parser.add_argument('-d', '--disable', help='Disable data collection', action='store_true')
+
     cmd_args = parser.parse_args()
-    configure(cmd_args.config)
+    if cmd_args.enable:
+        enable(cmd_args.config, True)
+    elif cmd_args.disable:
+        enable(cmd_args.config, False)
+    else:
+        configure(cmd_args.config)

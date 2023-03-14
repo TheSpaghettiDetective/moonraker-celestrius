@@ -51,7 +51,7 @@ EOF
 config_incomplete() {
       cat <<EOF
 ${red}
-Invalid input! Configuration failed to complete. No data will be sent until the Celestrius data collection program is configured properly.
+Incomplete Celstrius configuration. No data will be sent until the Celestrius data collection program is configured properly.
 ${default}
 
 To rerun the configuration process at a later time, run:
@@ -68,13 +68,49 @@ configure() {
   welcome
   ensure_deps
 
-  if ! PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}"; then
+  if ! PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}" $@; then
     config_incomplete
   fi
 }
 
+enabled() {
+     cat <<EOF
+${cyan}
+Celestrius data collection enabled!
+Snapshots will be collected from configured nozzle camera for all subsequent prints until disabled.
+${default}
+
+To disable Celestrius data collection:
+
+-------------------------------------------------------------------------------------------------
+cd ~/moonraker-celestrius
+./celestrius.sh disable
+-------------------------------------------------------------------------------------------------
+
+EOF
+}
+
+
+disabled() {
+     cat <<EOF
+${cyan}
+Celestrius data collection disabled!
+${default}
+
+To enable Celestrius data collection:
+
+-------------------------------------------------------------------------------------------------
+cd ~/moonraker-celestrius
+./celestrius.sh enable
+-------------------------------------------------------------------------------------------------
+
+EOF
+}
+
 case $1 in
-   help) usage && exit 0;;
-   install) configure;;
-    *) usage && exit 1;;
+  help) usage && exit 0;;
+  install) configure;;
+  enable) configure -e && enabled;;
+  disable) configure -d && disabled;;
+  *) usage && exit 1;;
 esac
