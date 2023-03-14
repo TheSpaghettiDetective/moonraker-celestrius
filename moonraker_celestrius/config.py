@@ -74,6 +74,7 @@ uploaded to the server.
     if "logging" not in config:
         config.add_section("logging")
 
+    print("")
     log_path_fallback = os.path.join(os.path.dirname(config_path), 'logs', 'moonraker-celestrius.log')
     log_path = config.get("logging", "path", fallback=log_path_fallback)
     log_path = input(f"Log file path (current: {log_path}): ") or log_path

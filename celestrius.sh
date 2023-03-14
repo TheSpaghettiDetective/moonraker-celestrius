@@ -31,7 +31,7 @@ EOF
 }
 
 success() {
-  echo -e "\n\n\n"
+  echo -e "\n"
   cat <<EOF
 ${cyan}
 ====================================================================================================
@@ -93,9 +93,11 @@ EOF
 }
 
 recreate_service() {
+  echo ""
+  report_status "Creating moonraker-celestrius systemctl service... You may need to enter password to run sudo."
+
   sudo systemctl stop "${CEL_SERVICE_NAME}" 2>/dev/null || true
 
-  report_status "Creating moonraker-celestrius systemctl service... You may need to enter password to run sudo."
   sudo /bin/sh -c "cat > /etc/systemd/system/${CEL_SERVICE_NAME}.service" <<EOF
 #Systemd service file for moonraker-celestrius
 [Unit]
@@ -150,6 +152,9 @@ configure() {
   if ! PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}" $@; then
     config_incomplete
   fi
+
+  recreate_service
+  success
 }
 
 enabled() {
