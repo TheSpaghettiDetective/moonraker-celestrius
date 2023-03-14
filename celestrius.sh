@@ -5,7 +5,6 @@ set -e
 CEL_DIR=$(realpath $(dirname "$0"))
 CEL_CFG_FILE="${CEL_DIR}/moonraker-celestrius.cfg"
 CEL_SERVICE_NAME="moonraker-celestrius"
-CEL_LOG_FILE="${CEL_DIR}/moonraker-celestrius.log"
 
 green=$(echo -en "\e[92m")
 yellow=$(echo -en "\e[93m")
@@ -115,7 +114,7 @@ WantedBy=multi-user.target
 
 [Service]
 Type=simple
-User=${CURRENT_USER}
+User=${USER}
 WorkingDirectory=${CEL_DIR}
 ExecStart=${CEL_ENV}/bin/python3 -m moonraker_celestrius.app -c ${CEL_CFG_FILE}
 Restart=always
@@ -125,7 +124,7 @@ EOF
   sudo systemctl enable "${CEL_SERVICE_NAME}"
   sudo systemctl daemon-reload
   report_status "Launching ${CEL_SERVICE_NAME} service..."
-  sudo systemctl start "${CEL_SERVICE_NAME}"
+  sudo systemctl restart "${CEL_SERVICE_NAME}"
 }
 
 uninstall() {
@@ -159,12 +158,15 @@ configure() {
     config_incomplete
   fi
 
+  mkdir -p "${CEL_DIR}/logs"
   recreate_service
   success
 }
 
 enable() {
   PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}" -e
+  report_status "Restarting moonraker-celestrius systemctl service... You may need to enter password to run sudo."
+  sudo systemctl restart "${CEL_SERVICE_NAME}"
   cat <<EOF
 ${cyan}
 Celestrius data collection enabled!
@@ -183,6 +185,8 @@ EOF
 
 
 disable() {
+  report_status "Restarting moonraker-celestrius systemctl service... You may need to enter password to run sudo."
+  sudo systemctl restart "${CEL_SERVICE_NAME}"
   PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}" -d
      cat <<EOF
 ${cyan}

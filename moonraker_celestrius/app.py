@@ -143,7 +143,7 @@ class App(object):
             blob.upload_from_file(f, timeout=None)
 
     def should_collect(self):
-        return self.config.get('celestrius', 'pilot_email') is not None and self.config.get('celestrius', 'enabled', "False").lower() == "true"
+        return self.config.get('celestrius', 'pilot_email') is not None and self.config.get('celestrius', 'enabled', fallback="False").lower() == "true"
 
     def on_moonraker_ws_msg(self, msg):
         print_stats = msg.get('result', {}).get('status', {}).get('print_stats')
