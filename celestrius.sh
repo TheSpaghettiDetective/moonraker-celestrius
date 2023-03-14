@@ -4,6 +4,7 @@ set -e
 
 CEL_DIR=$(realpath $(dirname "$0"))
 CEL_CFG_FILE="${CEL_DIR}/moonraker-celestrius.cfg"
+CEL_SERVICE_NAME="moonraker-celestrius"
 
 green=$(echo -en "\e[92m")
 yellow=$(echo -en "\e[93m")
@@ -44,6 +45,7 @@ usage() {
 Usage: $0 install   # Install/Re-install and configure/re-configure the Celestrius data collection program, including adding a system service.
        $0 enable    # Enable the data collection. Default to be disabled.
        $0 disable   # Disable the data collection.
+       $0 uninstall # Show instructions for uninstalling elestrius data collection program
        $0 help      # Show this message
 EOF
 }
@@ -62,6 +64,51 @@ cd ~/moonraker-celestrius
 -------------------------------------------------------------------------------------------------
 
 EOF
+}
+
+recreate_service() {
+  sudo systemctl stop "${CEL_SERVICE_NAME}" 2>/dev/null || true
+
+  report_status "Creating moonraker-celestrius systemctl service... You may need to enter password to run sudo."
+  sudo /bin/sh -c "cat > /etc/systemd/system/${CEL_SERVICE_NAME}.service" <<EOF
+#Systemd service file for moonraker-celestrius
+[Unit]
+Description=Celestrius data collection service
+After=network-online.target moonraker.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+User=${CURRENT_USER}
+WorkingDirectory=${CEL_DIR}
+ExecStart=${CEL_ENV}/bin/python3 -m moonraker_celestrius.app -c ${CEL_CFG_FILE}
+Restart=always
+RestartSec=5
+EOF
+
+  sudo systemctl enable "${CEL_SERVICE_NAME}"
+  sudo systemctl daemon-reload
+  report_status "Launching ${CEL_SERVICE_NAME} service..."
+  sudo systemctl start "${CEL_SERVICE_NAME}"
+}
+
+uninstall() {
+  cat <<EOF
+
+To uninstall Celestrius data collection program, please run:
+
+sudo systemctl stop "${CEL_SERVICE_NAME}"
+sudo systemctl disable "${CEL_SERVICE_NAME}"
+sudo rm "/etc/systemd/system/${CEL_SERVICE_NAME}.service"
+sudo systemctl daemon-reload
+sudo systemctl reset-failed
+rm -rf ~/moonraker-celestrius
+
+EOF
+
+  exit 0
 }
 
 configure() {
@@ -118,5 +165,6 @@ case $1 in
   install) configure;;
   enable) configure -e && enabled;;
   disable) configure -d && disabled;;
+  uninstall) uninstall ;;
   *) usage && exit 1;;
 esac
