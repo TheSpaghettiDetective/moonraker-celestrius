@@ -41,26 +41,20 @@ ${cyan}
 ###                                                                                              ###
 ====================================================================================================
 ${default}
+
+NOTE: 
 ${yellow}
-NOTE: The data collection is disabled so that you won't accidentally upload unintended data. To enable:
+- The data collection is disabled so that you won't accidentally upload unintended data. To enable:
 
 ./celestrius.sh enable
 
-Run "./celestrius.sh disable" to disable the data collection again.
 ${default}
 
+- To disable the data collection, run "./celestrius.sh disable".
 
-====================================================================================================
+- To make changes to the configurations, run "./celestrius.sh install" again.
 
-The changes we have made to your system:
-
-- System service: /etc/systemd/system/${CEL_SERVICE_NAME}
-- Log file: ${CEL_LOG_FILE}
-
-To remove Celestrius, run
-
-cd ~/moonraker-celestrius
-./celestrius.sh uninstall
+- To uninstall Celestrius,, run "./celestrius.sh uninstall"
 
 EOF
 
@@ -104,6 +98,8 @@ EOF
 }
 
 recreate_service() {
+  echo ""
+  echo ""
   report_status "Creating moonraker-celestrius systemctl service... You may need to enter password to run sudo."
 
   sudo systemctl stop "${CEL_SERVICE_NAME}" 2>/dev/null || true
@@ -167,8 +163,9 @@ configure() {
   success
 }
 
-enabled() {
-     cat <<EOF
+enable() {
+  PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}" -e
+  cat <<EOF
 ${cyan}
 Celestrius data collection enabled!
 Snapshots will be collected from configured nozzle camera for all subsequent prints until disabled.
@@ -185,7 +182,8 @@ EOF
 }
 
 
-disabled() {
+disable() {
+  PYTHONPATH="${CEL_DIR}:${PYTHONPATH}" ${CEL_ENV}/bin/python3 -m moonraker_celestrius.config -c "${CEL_CFG_FILE}" -d
      cat <<EOF
 ${cyan}
 Celestrius data collection disabled!
@@ -204,8 +202,8 @@ EOF
 case $1 in
   help) usage && exit 0;;
   install) configure;;
-  enable) configure -e && enabled;;
-  disable) configure -d && disabled;;
+  enable) enable;;
+  disable) disable;;
   uninstall) uninstall ;;
   *) usage && exit 1;;
 esac
