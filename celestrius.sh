@@ -42,7 +42,7 @@ ${cyan}
 ${default}
 
 NOTE: 
-${yellow}
+${magenta}
 - The data collection is disabled so that you won't accidentally upload unintended data. To enable:
 
 ./celestrius.sh enable
