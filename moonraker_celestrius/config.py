@@ -87,7 +87,8 @@ uploaded to the server.
     """ + NC)
 
     pilot_email = config.get("celestrius", "pilot_email", fallback="")
-    pilot_email = input(f"The email you signed up for the pilot program with (press 'enter' to accept: {pilot_email}): ") or pilot_email
+    current_val = f" (press 'enter' to accept: {pilot_email})" if pilot_email else ""
+    pilot_email = input(f"The email you signed up for the pilot program with{current_val}: ") or pilot_email
     pilot_email = pilot_email.strip()
     if not pilot_email:
         config_interrupted(None, None)
