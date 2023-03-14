@@ -44,7 +44,7 @@ def configure(config_path):
     print(CYAN + """
 The Snapshot URL. format: http(s)://ip-or-hostname(:port)/the/rest/of/the/url
 
-Please use the nozzle camera you set up for project Celestrius. Note if you have
+You MUST use the nozzle camera you set up for project Celestrius. Note if you have
 multiple cameras set up, this may NOT be the main camera you configured for your printer.
     """ + NC)
 
