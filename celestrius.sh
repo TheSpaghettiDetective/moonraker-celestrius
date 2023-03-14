@@ -5,6 +5,7 @@ set -e
 CEL_DIR=$(realpath $(dirname "$0"))
 CEL_CFG_FILE="${CEL_DIR}/moonraker-celestrius.cfg"
 CEL_SERVICE_NAME="moonraker-celestrius"
+CEL_LOG_FILE="${CEL_DIR}/moonraker-celestrius.log"
 
 green=$(echo -en "\e[92m")
 yellow=$(echo -en "\e[93m")
@@ -27,6 +28,31 @@ ${cyan}
 ======================================================================================================
 ${default}
 EOF
+}
+
+success() {
+  echo -e "\n\n\n"
+  cat <<EOF
+${cyan}
+====================================================================================================
+###                                                                                              ###
+###                                       SUCCESS!!!                                             ###
+###                             Celestrius data collection program is ready.                     ###
+###                                                                                              ###
+====================================================================================================
+${default}
+The changes we have made to your system:
+
+- System service: /etc/systemd/system/${CEL_SERVICE_NAME}
+- Log file: ${CEL_LOG_FILE}
+
+To remove Obico for Klipper, run:
+
+cd ~/moonraker-obico
+./install.sh -u
+
+EOF
+
 }
 
 ensure_deps() {

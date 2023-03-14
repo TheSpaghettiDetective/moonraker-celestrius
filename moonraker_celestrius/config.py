@@ -71,6 +71,14 @@ uploaded to the server.
 
     config.set("celestrius", "pilot_email", pilot_email)
 
+    if "logging" not in config:
+        config.add_section("logging")
+
+    log_path_fallback = os.path.join(os.path.dirname(config_path), 'logs', 'moonraker-celestrius.log')
+    log_path = config.get("logging", "path", fallback=log_path_fallback)
+    log_path = input(f"Log file path (current: {log_path}): ") or log_path
+    log_path = log_path.strip()
+
     # Save the updated configuration to the config file
     with open(config_path, "w") as f:
         config.write(f)

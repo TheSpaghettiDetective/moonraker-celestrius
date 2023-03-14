@@ -8,6 +8,7 @@ dist
 .DS_Store
 *.zip
 __pycache__
-env
+/env
+/logs
 .vscode
 moonraker-celestrius.cfg
