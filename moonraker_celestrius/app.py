@@ -40,6 +40,7 @@ class App(object):
         self.current_flow_rate = 1.0
         self.current_z_offset = None
         self.printer_stats = None
+        self.temperature_reached = False
 
     def start(self):
         self.moonrakerconn = MoonrakerConn(dict(self.config['moonraker']), self.on_moonraker_ws_msg, self.on_moonraker_ws_closed)
@@ -53,7 +54,6 @@ class App(object):
         last_collect = 0.0
         data_dirname = None
         snapshot_num_in_current_print = 0
-        temperature_reached = False
 
         while True:
             try:
@@ -149,21 +149,25 @@ class App(object):
                     self.temperature_reached
 
     def on_moonraker_ws_msg(self, msg):
-        print_stats = msg.get('result', {}).get('status', {}).get('print_stats')
-        if print_stats:
-            with self._mutex:
-                self.printer_stats = print_stats
+        try:
+            print_stats = msg.get('result', {}).get('status', {}).get('print_stats')
+            if print_stats:
+                with self._mutex:
+                    self.printer_stats = print_stats
 
-        gcode_move = msg.get('result', {}).get('status').get('gcode_move')
-        if gcode_move:
-            with self._mutex:
-                self.current_flow_rate = gcode_move.get('extrude_factor')
-                self.current_z_offset = gcode_move.get('homing_origin', [None, None, None, None])[2]
+            gcode_move = msg.get('result', {}).get('status', {}).get('gcode_move')
+            if gcode_move:
+                with self._mutex:
+                    self.current_flow_rate = gcode_move.get('extrude_factor')
+                    self.current_z_offset = gcode_move.get('homing_origin', [None, None, None, None])[2]
 
-        extruder = msg.get('result', {}).get('status').get('extruder')
-        if extruder and extruder.get('temperature', 0) > extruder.get('target', 200) - 2:
-            with self._mutex:
-                self.temperature_reached = True
+            extruder = msg.get('result', {}).get('status', {}).get('extruder')
+            if extruder and extruder.get('target', 0) > 150 and extruder.get('temperature', 0) > extruder.get('target') - 2:
+                with self._mutex:
+                    self.temperature_reached = True
+
+        except Exception as e:
+            _logger.exception('Exception occurred: %s', e)
 
     def on_moonraker_ws_closed(self):
         with self._mutex:

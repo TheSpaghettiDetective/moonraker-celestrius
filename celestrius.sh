@@ -46,9 +46,7 @@ ${magenta}
 - The data collection is disabled so that you won't accidentally upload unintended data. To enable:
 
 ./celestrius.sh enable
-
 ${default}
-
 - To disable the data collection, run "./celestrius.sh disable".
 
 - To make changes to the configurations, run "./celestrius.sh install" again.
