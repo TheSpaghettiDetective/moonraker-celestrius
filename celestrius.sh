@@ -60,6 +60,7 @@ EOF
 }
 
 ensure_deps() {
+  sudo apt install libgeos-dev
   CEL_ENV="${CEL_DIR}/env"
   if [ ! -f "${CEL_ENV}/bin/activate" ] ; then
     report_status "Creating python virtual environment for moonraker-celestrius..."
