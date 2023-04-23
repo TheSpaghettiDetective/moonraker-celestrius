@@ -51,6 +51,8 @@ ${default}
 
 - To make changes to the configurations, run "./celestrius.sh install" again.
 
+- To update Celestrius to the latest version, run "./celestrius.sh update".
+
 - To uninstall Celestrius,, run "./celestrius.sh uninstall"
 
 EOF
@@ -71,6 +73,7 @@ ensure_deps() {
 usage() {
   cat <<EOF
 Usage: $0 install   # Install/Re-install and configure/re-configure the Celestrius data collection program, including adding a system service.
+       $0 update    # Update Celestrius to the latest version
        $0 enable    # Enable the data collection. Default to be disabled.
        $0 disable   # Disable the data collection.
        $0 uninstall # Show instructions for uninstalling elestrius data collection program
@@ -206,6 +209,7 @@ EOF
 case $1 in
   help) usage && exit 0;;
   install) configure;;
+  update) git pull && ensure_deps;;
   enable) enable;;
   disable) disable;;
   uninstall) uninstall ;;
