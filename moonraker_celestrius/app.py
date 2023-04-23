@@ -22,6 +22,8 @@ import requests
 import os
 import subprocess
 from google.cloud import storage
+from shapely import geometry
+
 from .logger import setup_logging
 from .moonraker_conn import MoonrakerConn, Event
 
@@ -40,7 +42,10 @@ class App(object):
         self.current_flow_rate = 1.0
         self.current_z_offset = None
         self.printer_stats = None
-        self.temperature_reached = False
+        self.temperature_reached = True
+        self.object_polygons = []
+        self.z_offset_step = None
+        self.cur_polygon_idx = None
 
     def start(self):
         self.moonrakerconn = MoonrakerConn(dict(self.config['moonraker']), self.on_moonraker_ws_msg, self.on_moonraker_ws_closed)
@@ -74,6 +79,17 @@ class App(object):
                             data_dirname = os.path.join(os.path.expanduser('~'), 'celestrius-data',f'{filename}.{print_id}')
                             os.makedirs(data_dirname, exist_ok=True)
 
+                            filename_lower = filename.lower()
+                            if "celestrius" in filename_lower and "offset" in filename_lower:
+                                objs = self.moonrakerconn.find_all_gcode_objects()
+                                with self._mutex:
+                                    for obj in objs.get('status', {}).get('exclude_object', {}).get('objects', []):
+                                        self.object_polygons.append(geometry.Polygon(obj.get('polygon')))
+
+                                    if len(self.object_polygons) > 1:
+                                        _logger.warn(f'Found {len(self.object_polygons)}. Activating z-offset testing')
+                                        self.z_offset_step = int(10/len(self.object_polygons)) * 0.02
+
                         ts = datetime.now().timestamp()
                         if ts - last_collect >= SNAPSHOTS_INTERVAL_SECS:
                             last_collect = ts
@@ -97,6 +113,8 @@ class App(object):
                             compress_thread.start()
 
                         self.temperature_reached = False
+                        self.object_polygons = []
+                        self.z_offset_step = None
                         snapshot_num_in_current_print = 0
                         data_dirname = None
 
@@ -160,6 +178,24 @@ class App(object):
                 with self._mutex:
                     self.current_flow_rate = gcode_move.get('extrude_factor')
                     self.current_z_offset = gcode_move.get('homing_origin', [None, None, None, None])[2]
+
+                    current_position = gcode_move.get('position', [-1, -1, -1, -1])
+                    point = geometry.Point(current_position[0], current_position[1])
+                    cur_polygon_idx = None
+                    for idx, poly in enumerate(self.object_polygons):
+                        if poly.contains(point):
+                            cur_polygon_idx = idx
+
+                    if cur_polygon_idx is not None:
+                        _logger.debug(f'Current polygon {cur_polygon_idx}')
+                        if self.cur_polygon_idx != cur_polygon_idx:
+                            if self.cur_polygon_idx is not None:
+                                _logger.warn(f'Increasing Z-offset...')
+                                z_offset_thread = threading.Thread(target=self.moonrakerconn.api_post, args=('printer/gcode/script',), kwargs=dict(script=f'SET_GCODE_OFFSET Z_ADJUST=+{self.z_offset_step} MOVE=1'))
+                                z_offset_thread.daemon = True
+                                z_offset_thread.start()
+                        self.cur_polygon_idx = cur_polygon_idx
+
 
             extruder = msg.get('result', {}).get('status', {}).get('extruder')
             if extruder and extruder.get('target', 0) > 150 and extruder.get('temperature', 0) > extruder.get('target') - 2:

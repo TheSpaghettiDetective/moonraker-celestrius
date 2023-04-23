@@ -103,6 +103,9 @@ class MoonrakerConn:
         data = self.api_get('server/history/list', raise_for_status=True, order='desc', limit=1)
         return (data.get('jobs', [None]) or [None])[0]
 
+    @backoff.on_exception(backoff.expo, Exception, max_value=60)
+    def find_all_gcode_objects(self):
+        return self.api_get('printer/objects/query?exclude_object=')
 
     ## WebSocket part
 
