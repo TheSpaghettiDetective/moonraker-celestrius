@@ -216,7 +216,6 @@ class App(object):
                             elif self.cur_polygon_linger_start and (datetime.now().timestamp() - self.cur_polygon_linger_start) > 5:
                                 self.cur_polygon_linger_start = None
                                 self.num_polygon_seen += 1
-                                import pdb; pdb.set_trace()
                                 new_z_offset = round(self.init_z_offset + self.z_offset_step * (self.num_polygon_seen-1), 3)
                                 _logger.warning(f'Lingered in {cur_polygon_idx} for longer than 5s. Increasing Z-offset to {new_z_offset}...')
                                 z_offset_thread = threading.Thread(target=self.moonrakerconn.api_post, args=('printer/gcode/script',), kwargs=dict(script=f'SET_GCODE_OFFSET Z={new_z_offset} MOVE=1'))
