@@ -184,22 +184,22 @@ class App(object):
                     current_position = gcode_move.get('gcode_position', [-1, -1, 100, -1])
                     self.current_z = current_position[2]
 
-                    point = geometry.Point(current_position[0], current_position[1])
-                    cur_polygon_idx = None
-                    for idx, poly in enumerate(self.object_polygons):
-                        if poly.contains(point):
-                            cur_polygon_idx = idx
+                    if self.z_offset_step:
+                        point = geometry.Point(current_position[0], current_position[1])
+                        cur_polygon_idx = None
+                        for idx, poly in enumerate(self.object_polygons):
+                            if poly.covers(point):
+                                cur_polygon_idx = idx
 
-                    _logger.debug(f'Current polygon {cur_polygon_idx}')
-                    if cur_polygon_idx is not None:
-                        if self.cur_polygon_idx != cur_polygon_idx:
-                            if self.cur_polygon_idx is not None:
-                                _logger.warn(f'Increasing Z-offset...')
-                                z_offset_thread = threading.Thread(target=self.moonrakerconn.api_post, args=('printer/gcode/script',), kwargs=dict(script=f'SET_GCODE_OFFSET Z_ADJUST=+{self.z_offset_step} MOVE=1'))
-                                z_offset_thread.daemon = True
-                                z_offset_thread.start()
-                        self.cur_polygon_idx = cur_polygon_idx
-
+                        _logger.debug(f'Current polygon {cur_polygon_idx}')
+                        if cur_polygon_idx is not None:
+                            if self.cur_polygon_idx != cur_polygon_idx:
+                                if self.cur_polygon_idx is not None:
+                                    _logger.warn(f'Increasing Z-offset...')
+                                    z_offset_thread = threading.Thread(target=self.moonrakerconn.api_post, args=('printer/gcode/script',), kwargs=dict(script=f'SET_GCODE_OFFSET Z_ADJUST=+{self.z_offset_step} MOVE=1'))
+                                    z_offset_thread.daemon = True
+                                    z_offset_thread.start()
+                            self.cur_polygon_idx = cur_polygon_idx
 
             extruder = msg.get('result', {}).get('status', {}).get('extruder')
             if extruder and extruder.get('target', 0) > 150 and extruder.get('temperature', 0) > extruder.get('target') - 2:
