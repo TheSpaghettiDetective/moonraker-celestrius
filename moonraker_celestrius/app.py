@@ -46,6 +46,7 @@ class App(object):
         self.object_polygons = []
         self.z_offset_step = None
         self.cur_polygon_idx = None
+        self.current_z = None
 
     def start(self):
         self.moonrakerconn = MoonrakerConn(dict(self.config['moonraker']), self.on_moonraker_ws_msg, self.on_moonraker_ws_closed)
@@ -165,7 +166,7 @@ class App(object):
     def should_collect(self):
         with self._mutex:
             return self.config.get('celestrius', 'pilot_email') is not None and \
-                self.config.get('celestrius', 'enabled', fallback="False").lower() == "true" and \
+                self.config.get('celestrius', 'enabled', fallback="False").lower() == "true" and self.current_z < 0.5 and \
                     self.temperature_reached
 
     def on_moonraker_ws_msg(self, msg):
@@ -180,8 +181,9 @@ class App(object):
                 with self._mutex:
                     self.current_flow_rate = gcode_move.get('extrude_factor')
                     self.current_z_offset = gcode_move.get('homing_origin', [None, None, None, None])[2]
+                    current_position = gcode_move.get('gcode_position', [-1, -1, 100, -1])
+                    self.current_z = current_position[2]
 
-                    current_position = gcode_move.get('position', [-1, -1, -1, -1])
                     point = geometry.Point(current_position[0], current_position[1])
                     cur_polygon_idx = None
                     for idx, poly in enumerate(self.object_polygons):
