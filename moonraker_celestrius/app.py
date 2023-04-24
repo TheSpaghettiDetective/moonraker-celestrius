@@ -83,7 +83,9 @@ class App(object):
                             if "celestrius" in filename_lower and "offset" in filename_lower:
                                 objs = self.moonrakerconn.find_all_gcode_objects()
                                 with self._mutex:
-                                    for obj in objs.get('status', {}).get('exclude_object', {}).get('objects', []):
+                                    all_objects = objs.get('status', {}).get('exclude_object', {}).get('objects', [])
+                                    _logger.debug(f'Found objects: {all_objects}')
+                                    for obj in all_objects:
                                         self.object_polygons.append(geometry.Polygon(obj.get('polygon')))
 
                                     if len(self.object_polygons) > 1:
@@ -186,8 +188,8 @@ class App(object):
                         if poly.contains(point):
                             cur_polygon_idx = idx
 
+                    _logger.debug(f'Current polygon {cur_polygon_idx}')
                     if cur_polygon_idx is not None:
-                        _logger.debug(f'Current polygon {cur_polygon_idx}')
                         if self.cur_polygon_idx != cur_polygon_idx:
                             if self.cur_polygon_idx is not None:
                                 _logger.warn(f'Increasing Z-offset...')
