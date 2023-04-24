@@ -87,8 +87,8 @@ class App(object):
                                         self.object_polygons.append(geometry.Polygon(obj.get('polygon')))
 
                                     if len(self.object_polygons) > 1:
-                                        _logger.warn(f'Found {len(self.object_polygons)}. Activating z-offset testing')
-                                        self.z_offset_step = int(10/len(self.object_polygons)) * 0.02
+                                        _logger.warn(f'Found {len(self.object_polygons)} objects. Activating z-offset testing')
+                                        self.z_offset_step = int(24/(len(self.object_polygons)-1)) * 0.01
 
                         ts = datetime.now().timestamp()
                         if ts - last_collect >= SNAPSHOTS_INTERVAL_SECS:
