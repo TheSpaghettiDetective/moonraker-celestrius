@@ -97,7 +97,7 @@ class App(object):
 
                                     if len(self.object_polygons) > 1:
                                         _logger.warning(f'Found {len(self.object_polygons)} objects. Activating z-offset testing')
-                                        self.z_offset_step = int(24/(len(self.object_polygons)-1)) * 0.01
+                                        self.z_offset_step = 0.08
                                         self.init_z_offset = self.current_z_offset
 
                         ts = datetime.now().timestamp()
