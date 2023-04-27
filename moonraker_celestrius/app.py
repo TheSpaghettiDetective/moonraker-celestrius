@@ -44,7 +44,7 @@ class App(object):
         self.printer_stats = None
         self.temperature_reached = True
         self.object_polygons = []
-        self.z_offset_step = None
+        self.z_offset_stepping_activated = False
         self.cur_polygon_idx = None
         self.cur_polygon_linger_start = None
         self.num_polygon_seen = 0
@@ -88,7 +88,7 @@ class App(object):
                                 objs = self.moonrakerconn.find_all_gcode_objects()
                                 with self._mutex:
                                     self.num_polygon_seen = 0
-                                    self.z_offset_step = None
+                                    self.z_offset_stepping_activated = False
                                     self.init_z_offset = None
                                     all_objects = objs.get('status', {}).get('exclude_object', {}).get('objects', [])
                                     _logger.debug(f'Found objects: {all_objects}')
@@ -97,7 +97,7 @@ class App(object):
 
                                     if len(self.object_polygons) > 1:
                                         _logger.warning(f'Found {len(self.object_polygons)} objects. Activating z-offset testing')
-                                        self.z_offset_step = 0.08
+                                        self.z_offset_stepping_activated = True
                                         self.init_z_offset = self.current_z_offset
 
                         ts = datetime.now().timestamp()
@@ -131,7 +131,7 @@ class App(object):
 
                         self.temperature_reached = False
                         self.object_polygons = []
-                        self.z_offset_step = None
+                        self.z_offset_stepping_activated = False
                         self.init_z_offset = None
                         self.cur_polygon_idx = None
                         self.cur_polygon_linger_start = None
@@ -202,7 +202,7 @@ class App(object):
                     current_position = gcode_move.get('gcode_position', [-1, -1, 100, -1])
                     self.current_z = current_position[2]
 
-                    if self.z_offset_step:
+                    if self.z_offset_stepping_activated:
                         point = geometry.Point(current_position[0], current_position[1])
                         cur_polygon_idx = None
                         for idx, poly in enumerate(self.object_polygons):
@@ -216,7 +216,7 @@ class App(object):
                             elif self.cur_polygon_linger_start and (datetime.now().timestamp() - self.cur_polygon_linger_start) > 5:
                                 self.cur_polygon_linger_start = None
                                 self.num_polygon_seen += 1
-                                new_z_offset = round(self.init_z_offset + self.z_offset_step * (self.num_polygon_seen-1), 3)
+                                new_z_offset = round(self.init_z_offset + self.config.getfloat('celestrius', 'z_offset_increment', fallback=0.1) * (self.num_polygon_seen-1), 3)
                                 _logger.warning(f'Lingered in {cur_polygon_idx} for longer than 5s. Increasing Z-offset to {new_z_offset}...')
                                 z_offset_thread = threading.Thread(target=self.moonrakerconn.api_post, args=('printer/gcode/script',), kwargs=dict(script=f'SET_GCODE_OFFSET Z={new_z_offset} MOVE=1'))
                                 z_offset_thread.daemon = True
