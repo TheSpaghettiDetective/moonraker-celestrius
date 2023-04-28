@@ -202,7 +202,7 @@ class App(object):
                     current_position = gcode_move.get('gcode_position', [-1, -1, 100, -1])
                     self.current_z = current_position[2]
 
-                    if self.z_offset_stepping_activated:
+                    if self.z_offset_stepping_activated and self.should_collect():
                         point = geometry.Point(current_position[0], current_position[1])
                         cur_polygon_idx = None
                         for idx, poly in enumerate(self.object_polygons):
